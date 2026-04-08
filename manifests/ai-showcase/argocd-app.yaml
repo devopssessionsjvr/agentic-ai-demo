@@ -1,0 +1,151 @@
+# ============================================
+# ArgoCD Application for AI-Showcase
+# ============================================
+# ArgoCD watches this repository for changes and automatically
+# syncs the Kubernetes manifests to the cluster.
+#
+# When GitHub Actions updates the image tag in rollout.yaml,
+# ArgoCD detects the change and triggers deployment.
+#
+# Prerequisites:
+# - ArgoCD must be installed (https://argoproj.io/)
+# - GitHub repository must be accessible by ArgoCD
+
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: ai-showcase
+  # ArgoCD namespace
+  namespace: argocd
+  labels:
+    app: ai-showcase
+    managed-by: argocd
+
+spec:
+  # Project defines RBAC and policies
+  project: default
+
+  # Source configuration - where to get manifests
+  source:
+    # Repository URL
+    repoURL: https://github.com/your-org/your-repo
+    # Branch to track
+    targetRevision: demo
+    # Path within the repository
+    path: agentic-ai-demo/manifests/ai-showcase
+
+    # Kustomize configuration (optional)
+    kustomize: {}
+
+    # Helm configuration (optional)
+    # helm:
+    #   releaseName: ai-showcase
+    #   parameters:
+    #   - name: image.tag
+    #     value: "latest"
+
+  # Destination cluster configuration
+  destination:
+    # Kubernetes API server URL
+    # Use https://kubernetes.default.svc for local cluster
+    server: https://kubernetes.default.svc
+    # Namespace where resources will be deployed
+    namespace: ai-showcase
+
+  # Sync policy - how ArgoCD should behave
+  syncPolicy:
+    # Automatic sync enabled
+    automated:
+      # Prune resources that are no longer in Git
+      prune: true
+      # Self-heal - revert manual changes
+      selfHeal: true
+      # Allow empty repositories (won't delete resources if repo becomes empty)
+      allowEmpty: false
+
+    # Sync strategy for atomic updates
+    syncOptions:
+    # Create namespace if it doesn't exist
+    - CreateNamespace=true
+    # Propagation policy for object deletion
+    - PrunePropagationPolicy=foreground
+
+    # Retry policy for failed syncs
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+
+  # Health assessment rules
+  ignoreDifferences:
+  # Ignore the resourceVersion difference
+  - group: apps
+    kind: Deployment
+    jsonPointers:
+    - /spec/replicas
+    - /status/observedGeneration
+
+  # Notification settings
+  info:
+  - name: "Documentation"
+    value: "https://github.com/your-org/your-repo/blob/demo/README.md"
+  
+  - name: "CI/CD Pipeline"
+    value: "https://github.com/your-org/your-repo/actions"
+  
+  - name: "MTTR Dashboard"
+    value: "https://your-domain.com/dashboard/mttr"
+
+---
+# ============================================
+# AppProject for AI-Showcase
+# ============================================
+# Defines RBAC and access controls for the application
+
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: ai-showcase-project
+  namespace: argocd
+  labels:
+    managed-by: argocd
+
+spec:
+  # Description
+  description: "Project for AI-Showcase CI/CD demonstration"
+
+  # Allowed namespaces in the destination
+  destinations:
+  - namespace: 'ai-showcase'
+    server: https://kubernetes.default.svc
+  - namespace: 'default'
+    server: https://kubernetes.default.svc
+
+  # Source repositories allowed
+  sourceRepos:
+  - 'https://github.com/your-org/*'
+  - 'https://github.com/argoproj/*'
+
+  # Cluster resources
+  clusterResourceWhitelist:
+  - group: ''
+    kind: Namespace
+
+  # Namespace resources
+  namespaceResourceWhitelist:
+  - group: '*'
+    kind: '*'
+
+  # Deny certain resources
+  namespaceResourceBlacklist: []
+
+  # Orphaned resources (resources that remain after application deletion)
+  orphanedResources:
+    warn: true
+    ignore: []
+
+  # Repository credentials (if using private repos)
+  sourceNamespaces:
+  - argocd

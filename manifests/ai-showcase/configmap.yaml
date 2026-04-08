@@ -1,0 +1,148 @@
+# ============================================
+# ConfigMap for AI-Showcase Application
+# ============================================
+# Stores non-sensitive application configuration
+# and MTTR dashboard related settings.
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ai-showcase-config
+  namespace: ai-showcase
+  labels:
+    app: ai-showcase
+    component: app
+    managed-by: argocd
+  annotations:
+    description: "Configuration for AI-Showcase application"
+
+data:
+  # Application configuration
+  NODE_ENV: "production"
+  LOG_LEVEL: "info"
+  DEBUG: "false"
+  
+  # MTTR Dashboard configuration
+  MTTR_TRACKING_ENABLED: "true"
+  MTTR_STORAGE_TYPE: "memory"  # Options: memory, redis, mongodb
+  
+  # Canary deployment settings
+  CANARY_ENABLED: "true"
+  CANARY_INITIAL_WEIGHT: "10"
+  CANARY_INCREMENT: "10"
+  CANARY_INTERVAL: "5m"
+  
+  # AI Fix settings
+  AI_FIX_ENABLED: "true"
+  AI_FIX_MODEL: "gpt-4"
+  AI_FIX_MAX_RETRIES: "3"
+  
+  # ArgoCD sync settings
+  ARGOCD_SYNC_ENABLED: "true"
+  ARGOCD_AUTO_SYNC: "true"
+
+---
+# ============================================
+# MTTR Dashboard Data ConfigMap
+# ============================================
+# Stores initial MTTR dashboard structure and metrics schema
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ai-showcase-mttr-dashboard
+  namespace: ai-showcase
+  labels:
+    app: ai-showcase
+    component: dashboard
+    managed-by: argocd
+  annotations:
+    description: "MTTR Dashboard schema and initial data"
+
+data:
+  # MTTR Dashboard Schema (JSON format)
+  mttr-schema.json: |
+    {
+      "version": "1.0.0",
+      "namespace": "ai-showcase",
+      "metrics": [
+        {
+          "id": "commit_hash",
+          "type": "string",
+          "label": "Commit Hash",
+          "description": "Git commit SHA that triggered the deployment"
+        },
+        {
+          "id": "commit_author",
+          "type": "string",
+          "label": "Commit Author",
+          "description": "Author of the commit"
+        },
+        {
+          "id": "timestamp",
+          "type": "datetime",
+          "label": "Timestamp",
+          "description": "When the deployment was triggered"
+        },
+        {
+          "id": "test_status",
+          "type": "enum",
+          "values": ["passed", "failed"],
+          "label": "Test Status",
+          "description": "Result of the test run"
+        },
+        {
+          "id": "ai_fix_applied",
+          "type": "boolean",
+          "label": "AI Fix Applied",
+          "description": "Whether AI-assisted auto-fix was triggered"
+        },
+        {
+          "id": "ai_fix_model",
+          "type": "string",
+          "label": "AI Fix Model",
+          "description": "Which AI model was used for auto-fix"
+        },
+        {
+          "id": "mttr_minutes",
+          "type": "number",
+          "label": "MTTR (minutes)",
+          "description": "Mean Time To Recovery in minutes"
+        },
+        {
+          "id": "deployment_status",
+          "type": "enum",
+          "values": ["pending", "running", "succeeded", "failed"],
+          "label": "Deployment Status",
+          "description": "Status of the Kubernetes deployment"
+        },
+        {
+          "id": "canary_progress",
+          "type": "number",
+          "label": "Canary Progress %",
+          "description": "Current canary rollout progress percentage"
+        },
+        {
+          "id": "rollout_duration_seconds",
+          "type": "number",
+          "label": "Rollout Duration (s)",
+          "description": "Total time for canary rollout to complete"
+        }
+      ]
+    }
+
+  # Initial MTTR dashboard structure
+  mttr-initial.json: |
+    {
+      "namespace": "ai-showcase",
+      "created_at": "2024-04-08T00:00:00Z",
+      "records": [],
+      "stats": {
+        "total_deployments": 0,
+        "successful_deployments": 0,
+        "failed_deployments": 0,
+        "ai_fixes_applied": 0,
+        "average_mttr_minutes": 0,
+        "average_canary_duration_seconds": 0
+      }
+    }

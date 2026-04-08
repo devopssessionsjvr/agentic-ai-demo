@@ -1,0 +1,91 @@
+# ============================================
+# Service for AI-Showcase Application
+# ============================================
+# Kubernetes Service exposes the application to other pods
+# and optionally to external traffic via LoadBalancer
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: ai-showcase-app
+  namespace: ai-showcase
+  labels:
+    app: ai-showcase
+    component: app
+    managed-by: argocd
+  annotations:
+    description: "Service for AI-Showcase application"
+
+spec:
+  # Service type
+  # Options: ClusterIP (internal only), NodePort, LoadBalancer, ExternalName
+  type: LoadBalancer
+
+  # Specifies the port on which Kubernetes listens
+  # and redirects traffic to containers
+  ports:
+  - name: http
+    port: 80
+    targetPort: http  # Must match container port name
+    protocol: TCP
+
+  # HTTPS port (optional)
+  - name: https
+    port: 443
+    targetPort: http  # Typically handled by ingress controller
+    protocol: TCP
+
+  # Selector to identify backend pods
+  selector:
+    app: ai-showcase
+    component: app
+
+  # SessionAffinity ensures requests from same client
+  # go to the same pod (useful for stateful apps)
+  sessionAffinity: ClientIP
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 10800
+
+  # Publish not ready addresses (for canary rollouts)
+  publishNotReadyAddresses: false
+
+  # External traffic policy
+  # Options: Cluster, Local
+  externalTrafficPolicy: Local
+
+---
+# ============================================
+# Service for Metrics/Internal Communication
+# ============================================
+# Headless service for internal pod communication and metrics scraping
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: ai-showcase-metrics
+  namespace: ai-showcase
+  labels:
+    app: ai-showcase
+    component: metrics
+    managed-by: argocd
+  annotations:
+    description: "Metrics service for Prometheus scraping"
+
+spec:
+  # ClusterIP: None = Headless Service
+  # No load balancing, DNS returns pod IPs directly
+  clusterIP: None
+
+  ports:
+  - name: metrics
+    port: 3000
+    targetPort: http
+    protocol: TCP
+
+  selector:
+    app: ai-showcase
+    component: app
+
+  # For headless services
+  publishNotReadyAddresses: true

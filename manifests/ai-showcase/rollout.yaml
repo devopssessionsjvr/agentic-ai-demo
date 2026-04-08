@@ -1,0 +1,283 @@
+# ============================================
+# Argo Rollout for AI-Showcase Application
+# ============================================
+# Argo Rollouts provides advanced deployment strategies including:
+# - Canary Deployments: gradually roll out new versions
+# - Blue/Green Deployments: atomic switchover
+# - Experiment Runs: validate new versions before full rollout
+#
+# GitHub Actions will update the image tag in this manifest,
+# triggering automatic rollout progression.
+#
+# Prerequisites:
+# - Argo Rollouts must be installed: 
+#   kubectl apply -n argo-rollouts -f https://github.com/argoproj/argo-rollouts/releases/download/stable/install.yaml
+
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: ai-showcase-app
+  namespace: ai-showcase
+  labels:
+    app: ai-showcase
+    component: app
+    managed-by: argocd
+  annotations:
+    description: "Argo Rollout for canary deployment of AI-Showcase application"
+    owner: "devops-team"
+
+spec:
+  # Number of replicas
+  replicas: 3
+
+  # Selector for pod template
+  selector:
+    matchLabels:
+      app: ai-showcase
+      component: app
+
+  # Pod template specification (same as Deployment)
+  template:
+    metadata:
+      labels:
+        app: ai-showcase
+        component: app
+        version: v1
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "3000"
+        prometheus.io/path: "/metrics"
+
+    spec:
+      # Security context
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        fsGroup: 1001
+        seccompProfile:
+          type: RuntimeDefault
+
+      serviceAccountName: ai-showcase
+      terminationGracePeriodSeconds: 30
+
+      containers:
+      - name: ai-showcase-app
+        image: ghcr.io/your-org/ai-showcase-app:latest  # Updated by GitHub Actions
+        imagePullPolicy: IfNotPresent
+
+        ports:
+        - name: http
+          containerPort: 3000
+          protocol: TCP
+
+        # Environment configuration (from ConfigMap and Secrets)
+        env:
+        - name: NODE_ENV
+          valueFrom:
+            configMapKeyRef:
+              name: ai-showcase-config
+              key: NODE_ENV
+
+        - name: LOG_LEVEL
+          valueFrom:
+            configMapKeyRef:
+              name: ai-showcase-config
+              key: LOG_LEVEL
+
+        - name: OPENAI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: ai-showcase-secrets
+              key: OPENAI_API_KEY
+
+        - name: GITHUB_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: ai-showcase-secrets
+              key: GITHUB_TOKEN
+
+        # Kubernetes downward API
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+
+        # Resource requests and limits
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+
+        # Health probes
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 10
+          periodSeconds: 15
+          failureThreshold: 3
+
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: http
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          failureThreshold: 2
+
+        # Security context
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          capabilities:
+            drop:
+            - ALL
+
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+        - name: cache
+          mountPath: /app/.cache
+
+        lifecycle:
+          preStop:
+            exec:
+              command:
+              - /bin/sh
+              - -c
+              - sleep 15
+
+      volumes:
+      - name: tmp
+        emptyDir:
+          sizeLimit: 100Mi
+      - name: cache
+        emptyDir:
+          sizeLimit: 50Mi
+
+      imagePullSecrets:
+      - name: ghcr-secret
+
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - ai-showcase
+              topologyKey: kubernetes.io/hostname
+
+  # ============================================
+  # Canary Deployment Strategy
+  # ============================================
+  # This strategy gradually shifts traffic to the new version
+  strategy:
+    canary:
+      # Number of canary replicas (or percentage if specified as "10%")
+      canaryReplicas: 1
+
+      # Maximum number of surge replicas
+      maxSurge: 1
+
+      # Maximum number of unavailable replicas
+      maxUnavailable: 0
+
+      # Steps define the canary rollout progression
+      steps:
+      # Step 1: Start with 10% traffic to canary
+      - setWeight: 10
+      # Wait 5 minutes for validation
+      - pause:
+          duration: 5m
+
+      # Step 2: Increase to 25%
+      - setWeight: 25
+      - pause:
+          duration: 5m
+
+      # Step 3: Increase to 50%
+      - setWeight: 50
+      - pause:
+          duration: 5m
+
+      # Step 4: Increase to 75%
+      - setWeight: 75
+      - pause:
+          duration: 5m
+
+      # Step 5: Complete to 100% (full rollout)
+      - setWeight: 100
+
+      # ============================================
+      # Analysis Template for Validation
+      # ============================================
+      # Automatically validates canary against metrics
+      analysis:
+        interval: 1m
+        threshold: 5
+        metrics:
+        # Error rate metric - fail if > 1%
+        - name: error_rate
+          interval: 1m
+          initialDelay: 2m
+          # Success criteria: if error_rate <= 1%
+          successCriteria: result[0] <= 1
+          failureLimit: 3
+          provider:
+            prometheus:
+              address: http://prometheus:9090
+              query: |
+                sum(rate(http_requests_total{status=~"5.."}[1m])) / 
+                sum(rate(http_requests_total[1m])) * 100
+
+        # Response time metric - fail if p95 > 500ms
+        - name: response_time
+          interval: 1m
+          initialDelay: 2m
+          successCriteria: result[0] <= 500
+          failureLimit: 3
+          provider:
+            prometheus:
+              address: http://prometheus:9090
+              query: |
+                histogram_quantile(0.95, 
+                  sum(rate(http_request_duration_seconds_bucket[1m])) by (le)
+                ) * 1000
+
+      # ============================================
+      # Traffic routing (requires service mesh)
+      # ============================================
+      # When using Istio or Linkerd, configure traffic splitting
+      trafficRouting:
+        # For Istio
+        istio:
+          virtualService:
+            name: ai-showcase-app
+            routes:
+            - primary
+
+  # ============================================
+  # Revision History Limit
+  # ============================================
+  revisionHistoryLimit: 10
+
+  # ============================================
+  # Active Deployment Selector
+  # ============================================
+  # Used by service mesh to identify active deployments
+  selector:
+    matchLabels:
+      app: ai-showcase
+      component: app
