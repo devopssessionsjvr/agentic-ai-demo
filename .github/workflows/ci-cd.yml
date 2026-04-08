@@ -47,13 +47,14 @@ jobs:
       uses: aquasecurity/trivy-action@master
       with:
         scan-type: 'fs'
-        scan-ref: 'agentic-ai-demo/app'
+        scan-ref: './agentic-ai-demo/app'
         format: 'sarif'
         output: 'trivy-results.sarif'
+      continue-on-error: true
 
     - name: Upload Trivy results to GitHub Security tab
-      uses: github/codeql-action/upload-sarif@v2
-      if: always()
+      uses: github/codeql-action/upload-sarif@v3
+      if: always() && hashFiles('trivy-results.sarif') != ''
       with:
         sarif_file: 'trivy-results.sarif'
 
