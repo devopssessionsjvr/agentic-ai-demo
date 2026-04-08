@@ -1,1 +1,102 @@
 
+name: 🤖 Self-Healing AI CI Demo
+
+on:
+  push:
+    branches: [demo]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+
+  test-and-analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set demo env
+        run: |
+          echo "NODE_ENV=test" >> $GITHUB_ENV
+          echo "MONGO_URL=dummy" >> $GITHUB_ENV
+          echo "ACCESS_TOKEN_SECRET=dummy" >> $GITHUB_ENV
+          echo "RAPID_API_KEY=dummy" >> $GITHUB_ENV
+          echo "GOOGLE_GENERATIVE_AI_KEY=dummy" >> $GITHUB_ENV
+          echo "STRIPE_SECRET_KEY=dummy" >> $GITHUB_ENV
+          echo "EMAIL_USER=dummy@example.com" >> $GITHUB_ENV
+          echo "EMAIL_PASSWORD=dummy" >> $GITHUB_ENV
+
+      - name: Install dependencies
+        run: |
+          cd backend
+          npm install
+
+      - name: Run Tests
+        run: |
+          cd backend
+          npm test || echo "failed" > test_status.txt
+
+      - name: Run AI Analysis
+        run: python3 scripts/incident_analyzer.py || true
+
+      - name: Upload AI Analysis
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-analysis
+          path: analysis.json
+
+  ai-auto-fix:
+    needs: test-and-analyze
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.11
+
+      - run: pip install openai jq
+
+      - name: Generate AI Fix
+        run: python3 scripts/ai_fix_generator.py || true
+
+      - name: Apply Fix
+        run: |
+          BRANCH="ai-fix-demo"
+          git checkout -B $BRANCH
+          if [ -f fix.json ]; then
+            jq -r '.file_changes[] | "echo \"" + .content + "\" > " + .file' fix.json | bash
+          fi
+          git config user.name "ai-bot"
+          git config user.email "ai-bot@github.com"
+          git add .
+          git commit -m "🤖 AI auto-fix demo" || echo "No changes"
+          git push origin $BRANCH --force
+
+      - name: Create PR
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.PAT_TOKEN }}
+          script: |
+            const branch = "ai-fix-demo";
+            const prs = await github.rest.pulls.list({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              head: `${context.repo.owner}:${branch}`,
+              state: "open"
+            });
+            if (prs.data.length === 0) {
+              await github.rest.pulls.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: "🤖 AI Auto Fix Demo",
+                head: branch,
+                base: "demo",
+                body: "Auto-generated fix for demo failure"
+              });
+            }
