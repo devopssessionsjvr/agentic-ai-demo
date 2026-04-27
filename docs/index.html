@@ -110,42 +110,82 @@
 </table>
 
 <script>
-// ==== Paste your JSON here ====
-const data = YOUR_JSON_HERE;
+const data = {
+  stats: {
+    total_deployments: 7,
+    successful_deployments: 5,
+    failed_deployments: 2,
+    success_rate_percent: 71.4,
+    ai_fix_rate_percent: 40,
+    average_mttr_minutes: 6.8
+  },
+  records: [
+    {
+      commit_hash: "abc123def",
+      deployment_status: "succeeded",
+      mttr_minutes: 5.2,
+      ai_fix_applied: false,
+      commit_author: "dev-user"
+    },
+    {
+      commit_hash: "xyz789abc",
+      deployment_status: "succeeded",
+      mttr_minutes: 10.5,
+      ai_fix_applied: true,
+      commit_author: "ai-bot"
+    },
+    {
+      commit_hash: "pqr456lmn",
+      deployment_status: "failed",
+      mttr_minutes: 0,
+      ai_fix_applied: false,
+      commit_author: "dev-user"
+    },
+    {
+      commit_hash: "uvw111aaa",
+      deployment_status: "succeeded",
+      mttr_minutes: 3.5,
+      ai_fix_applied: false,
+      commit_author: "dev-user"
+    },
+    {
+      commit_hash: "bbb222ccc",
+      deployment_status: "succeeded",
+      mttr_minutes: 4.8,
+      ai_fix_applied: true,
+      commit_author: "ai-bot"
+    }
+  ]
+};
 
-// ==== Stats ====
-const stats = data.stats;
-document.getElementById("total").innerText = stats.total_deployments;
-document.getElementById("successRate").innerText = stats.success_rate_percent + "%";
-document.getElementById("avgMttr").innerText = stats.average_mttr_minutes + " min";
-document.getElementById("aiFixRate").innerText = stats.ai_fix_rate_percent + "%";
+// ===== Populate Stats =====
+document.getElementById("total").innerText = data.stats.total_deployments;
+document.getElementById("successRate").innerText = data.stats.success_rate_percent + "%";
+document.getElementById("avgMttr").innerText = data.stats.average_mttr_minutes + " min";
+document.getElementById("aiFixRate").innerText = data.stats.ai_fix_rate_percent + "%";
 
-// ==== Records ====
-const records = data.records.slice(-15);
-
-// Table
+// ===== Table =====
 const tableBody = document.getElementById("tableBody");
 
-records.reverse().forEach(r => {
-  const row = `
+data.records.slice().reverse().forEach(r => {
+  tableBody.innerHTML += `
     <tr>
-      <td>${r.commit_hash?.substring(0,7)}</td>
+      <td>${r.commit_hash.substring(0,7)}</td>
       <td>${r.deployment_status}</td>
       <td>${r.mttr_minutes}</td>
       <td>${r.ai_fix_applied}</td>
       <td>${r.commit_author}</td>
     </tr>
   `;
-  tableBody.innerHTML += row;
 });
 
-// ==== Chart Data ====
-const labels = records.map(r => r.commit_hash?.substring(0,6));
-const mttr = records.map(r => r.mttr_minutes);
-const aiFixCount = records.filter(r => r.ai_fix_applied).length;
-const manualCount = records.length - aiFixCount;
+// ===== Chart Data =====
+const labels = data.records.map(r => r.commit_hash.substring(0,6));
+const mttr = data.records.map(r => r.mttr_minutes);
+const aiFixCount = data.records.filter(r => r.ai_fix_applied).length;
+const manualCount = data.records.length - aiFixCount;
 
-// ==== MTTR Line Chart ====
+// MTTR Chart
 new Chart(document.getElementById("mttrChart"), {
   type: 'line',
   data: {
@@ -159,7 +199,7 @@ new Chart(document.getElementById("mttrChart"), {
   }
 });
 
-// ==== AI Fix Pie Chart ====
+// AI Fix Chart
 new Chart(document.getElementById("aiChart"), {
   type: 'pie',
   data: {
@@ -171,21 +211,20 @@ new Chart(document.getElementById("aiChart"), {
   }
 });
 
-// ==== Success Chart ====
+// Success Chart
 new Chart(document.getElementById("successChart"), {
   type: 'doughnut',
   data: {
     labels: ['Success', 'Failed'],
     datasets: [{
       data: [
-        stats.successful_deployments,
-        stats.failed_deployments
+        data.stats.successful_deployments,
+        data.stats.failed_deployments
       ],
       backgroundColor: ['#3b82f6', '#f43f5e']
     }]
   }
 });
-
 </script>
 
 </body>
