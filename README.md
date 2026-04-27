@@ -462,6 +462,8 @@ kubectl port-forward -n argocd svc/argocd-server 8080:443
 
 ### MTTR Dashboard (JSON View)
 Access `dashboard/mttr.json` to see deployment metrics
+## 📊 Live MTTR Dashboard
+👉 https://devopssessionsjvr.github.io/agentic-ai-demo/
 
 ### Kubernetes Dashboards
 ```bash
