@@ -1,0 +1,72 @@
+# ============================================
+# RBAC Resources for AI-Showcase Application
+# ============================================
+# Service account and role bindings for RBAC control
+
+---
+# ServiceAccount
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: ai-showcase
+  namespace: ai-showcase
+  labels:
+    app: ai-showcase
+    managed-by: argocd
+  annotations:
+    description: "Service account for AI-Showcase application"
+
+---
+# Role with minimal required permissions
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: ai-showcase
+  namespace: ai-showcase
+  labels:
+    app: ai-showcase
+    managed-by: argocd
+  annotations:
+    description: "Role for AI-Showcase application"
+
+rules:
+# Read pod information (for downward API validation)
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get", "list", "watch"]
+
+# Read configmaps and secrets mounted in the pod
+- apiGroups: [""]
+  resources: ["configmaps", "secrets"]
+  verbs: ["get", "list"]
+
+# Read endpoints for service discovery
+- apiGroups: [""]
+  resources: ["endpoints"]
+  verbs: ["get", "list"]
+
+# Read service information
+- apiGroups: [""]
+  resources: ["services"]
+  verbs: ["get", "list"]
+
+---
+# RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: ai-showcase
+  namespace: ai-showcase
+  labels:
+    app: ai-showcase
+    managed-by: argocd
+
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: ai-showcase
+
+subjects:
+- kind: ServiceAccount
+  name: ai-showcase
+  namespace: ai-showcase

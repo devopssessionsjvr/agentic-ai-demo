@@ -1,0 +1,31 @@
+{
+  "name": "ai-showcase-app",
+  "version": "1.0.0",
+  "description": "AI-assisted CI/CD with Kubernetes and Argo Rollouts",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "nodemon app.js",
+    "test": "jest --coverage",
+    "test:watch": "jest --watch"
+  },
+  "keywords": [
+    "kubernetes",
+    "gitops",
+    "argocd",
+    "ci-cd",
+    "ai-fix"
+  ],
+  "author": "DevOps Team",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.3"
+  },
+  "devDependencies": {
+    "jest": "^29.5.0",
+    "supertest": "^6.3.3",
+    "nodemon": "^2.0.22"
+  }
+}

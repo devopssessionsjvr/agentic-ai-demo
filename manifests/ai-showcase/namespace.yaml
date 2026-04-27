@@ -1,0 +1,22 @@
+# ============================================
+# Kubernetes Namespace for AI-Showcase Application
+# ============================================
+# This namespace isolates all AI-Showcase resources
+# ensuring clear separation from other workloads.
+#
+# Features:
+# - Resource quotas can be applied
+# - Network policies can be scoped
+# - RBAC controls can be enforced per-namespace
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ai-showcase
+  labels:
+    name: ai-showcase
+    environment: production
+    managed-by: argocd
+  annotations:
+    description: "Namespace for AI-Showcase CI/CD demonstration application"
+    owner: "devops-team"
