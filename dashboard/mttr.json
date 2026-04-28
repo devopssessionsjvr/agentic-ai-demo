@@ -2,7 +2,7 @@
   "version": "1.0.0",
   "namespace": "ai-showcase",
   "created_at": "2024-04-08T00:00:00Z",
-  "updated_at": "2026-04-28T00:09:04.702637Z",
+  "updated_at": "2026-04-28T00:12:36.934051Z",
   "description": "Mean Time To Recovery (MTTR) Dashboard for AI-Showcase CI/CD Pipeline",
   "records": [
     {
@@ -229,10 +229,26 @@
       "rollout_duration_seconds": 0,
       "mttr_minutes": 0,
       "argocd_sync_status": "pending"
+    },
+    {
+      "id": "25026499781",
+      "commit_hash": "1f5001dbfb8e1beb2e916e7e5e6e34a6d969ba3a",
+      "commit_author": "devopssessionsjvr",
+      "timestamp": "2026-04-28T00:12:36.933813Z",
+      "test_status": "passed",
+      "ai_fix_applied": false,
+      "ai_fix_model": null,
+      "deployment_status": "pending",
+      "image_tag": "demo-1f5001d",
+      "image_url": "ghcr.io/devopssessionsjvr/agentic-ai-demo/ai-showcase-app:demo-1f5001d",
+      "canary_progress": 0,
+      "rollout_duration_seconds": 0,
+      "mttr_minutes": 0,
+      "argocd_sync_status": "pending"
     }
   ],
   "stats": {
-    "total_deployments": 12,
+    "total_deployments": 13,
     "successful_deployments": 2,
     "failed_deployments": 0,
     "success_rate_percent": 100.0,
