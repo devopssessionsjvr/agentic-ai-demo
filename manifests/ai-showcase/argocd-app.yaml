@@ -28,11 +28,11 @@ spec:
   # Source configuration - where to get manifests
   source:
     # Repository URL
-    repoURL: https://github.com/your-org/your-repo
+    repoURL: https://github.com/devopssessionsjvr/agentic-ai-demo.git
     # Branch to track
     targetRevision: demo
     # Path within the repository
-    path: agentic-ai-demo/manifests/ai-showcase
+    path: manifests/ai-showcase
 
     # Kustomize configuration (optional)
     kustomize: {}
@@ -90,10 +90,10 @@ spec:
   # Notification settings
   info:
   - name: "Documentation"
-    value: "https://github.com/your-org/your-repo/blob/demo/README.md"
+    value: "https://github.com/devopssessionsjvr/agentic-ai-demo/blob/demo/README.md"
   
   - name: "CI/CD Pipeline"
-    value: "https://github.com/your-org/your-repo/actions"
+    value: "https://github.com/devopssessionsjvr/agentic-ai-demo/actions"
   
   - name: "MTTR Dashboard"
     value: "https://your-domain.com/dashboard/mttr"
@@ -125,7 +125,7 @@ spec:
 
   # Source repositories allowed
   sourceRepos:
-  - 'https://github.com/your-org/*'
+  - 'https://github.com/devopssessionsjvr/agentic-ai-demo/*'
   - 'https://github.com/argoproj/*'
 
   # Cluster resources
