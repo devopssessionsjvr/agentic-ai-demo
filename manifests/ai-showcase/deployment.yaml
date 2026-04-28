@@ -73,7 +73,7 @@ spec:
       # Application container specification
       containers:
       - name: ai-showcase-app
-        image: ghcr.io/your-org/ai-showcase-app:latest
+        image: ghcr.io/devopssessionsjvr/agentic-ai-demo/ai-showcase-app:demo-e408ddd
         imagePullPolicy: IfNotPresent
 
         # Container ports
