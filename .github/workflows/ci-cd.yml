@@ -19,7 +19,7 @@ on:
 # ============================================
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}/ai-showcase-app
+  images: ghcr.io/devopssessionsjvr/ai-showcase-app
   DEMO_DIR: .
 
 # ============================================
