@@ -339,7 +339,7 @@ jobs:
       with:
         context: app
         push: true
-        tags: ${{ steps.meta.outputs.tags }}
+        tags: ghcr.io/devopssessionsjvr/ai-showcase-app:demo
         labels: ${{ steps.meta.outputs.labels }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
