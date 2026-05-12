@@ -1,6 +1,6 @@
 # 🚀 AI-Assisted CI/CD with Kubernetes & Argo Rollouts
 
-Complete, production-ready CI/CD workflow demonstrating **AI-assisted auto-fixing**, **GitOps with ArgoCD**, **canary deployments with Argo Rollouts**, and **MTTR dashboard**.
+Complete, production-ready CI/CD workflow demonstrating **AI-assisted auto-fixing**, **GitOps with ArgoCD**, **canary deployments with Argo Rollouts**, and MTTR dashboard.
 
 ---
 
