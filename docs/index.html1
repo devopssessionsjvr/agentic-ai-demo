@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>AI CI/CD MTTR Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    body {
+      font-family: Arial;
+      background: #0f172a;
+      color: #e2e8f0;
+      padding: 20px;
+    }
+
+    h1, h2 {
+      text-align: center;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+
+    .card {
+      background: #1e293b;
+      padding: 20px;
+      border-radius: 10px;
+      text-align: center;
+      box-shadow: 0 0 10px rgba(0,0,0,0.3);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+
+    th, td {
+      border: 1px solid #334155;
+      padding: 10px;
+      text-align: center;
+    }
+
+    th {
+      background: #1e293b;
+    }
+
+    canvas {
+      background: white;
+      border-radius: 10px;
+      padding: 10px;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+
+<body>
+
+<h1>🚀 AI CI/CD MTTR Dashboard</h1>
+<p style="text-align:center;">Namespace: ai-showcase</p>
+
+<!-- ===== Stats Cards ===== -->
+<div class="grid">
+  <div class="card">
+    <h3>Total Deployments</h3>
+    <p id="total"></p>
+  </div>
+
+  <div class="card">
+    <h3>Success Rate</h3>
+    <p id="successRate"></p>
+  </div>
+
+  <div class="card">
+    <h3>Avg MTTR</h3>
+    <p id="avgMttr"></p>
+  </div>
+
+  <div class="card">
+    <h3>AI Fix Usage</h3>
+    <p id="aiFixRate"></p>
+  </div>
+</div>
+
+<!-- ===== Charts ===== -->
+<h2>📊 MTTR Trend</h2>
+<canvas id="mttrChart"></canvas>
+
+<h2>📊 AI Fix vs Manual</h2>
+<canvas id="aiChart"></canvas>
+
+<h2>📊 Success vs Failed</h2>
+<canvas id="successChart"></canvas>
+
+<!-- ===== Table ===== -->
+<h2>📋 Recent Deployments</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Commit</th>
+      <th>Status</th>
+      <th>MTTR</th>
+      <th>AI Fix</th>
+      <th>Author</th>
+    </tr>
+  </thead>
+  <tbody id="tableBody"></tbody>
+</table>
+
+<script>
+const data = {
+  stats: {
+    total_deployments: 7,
+    successful_deployments: 5,
+    failed_deployments: 2,
+    success_rate_percent: 71.4,
+    ai_fix_rate_percent: 40,
+    average_mttr_minutes: 6.8
+  },
+  records: [
+    {
+      commit_hash: "abc123def",
+      deployment_status: "succeeded",
+      mttr_minutes: 5.2,
+      ai_fix_applied: false,
+      commit_author: "devopssessionsjvr"
+    },
+    {
+      commit_hash: "xyz789abc",
+      deployment_status: "succeeded",
+      mttr_minutes: 10.5,
+      ai_fix_applied: true,
+      commit_author: "ai-bot"
+    },
+    {
+      commit_hash: "pqr456lmn",
+      deployment_status: "failed",
+      mttr_minutes: 0,
+      ai_fix_applied: false,
+      commit_author: "devopssessionsjvr"
+    },
+    {
+      commit_hash: "uvw111aaa",
+      deployment_status: "succeeded",
+      mttr_minutes: 3.5,
+      ai_fix_applied: false,
+      commit_author: "devopssessionsjvr"
+    },
+    {
+      commit_hash: "bbb222ccc",
+      deployment_status: "succeeded",
+      mttr_minutes: 4.8,
+      ai_fix_applied: true,
+      commit_author: "ai-bot"
+    }
+  ]
+};
+
+// ===== Populate Stats =====
+document.getElementById("total").innerText = data.stats.total_deployments;
+document.getElementById("successRate").innerText = data.stats.success_rate_percent + "%";
+document.getElementById("avgMttr").innerText = data.stats.average_mttr_minutes + " min";
+document.getElementById("aiFixRate").innerText = data.stats.ai_fix_rate_percent + "%";
+
+// ===== Table =====
+const tableBody = document.getElementById("tableBody");
+
+data.records.slice().reverse().forEach(r => {
+  tableBody.innerHTML += `
+    <tr>
+      <td>${r.commit_hash.substring(0,7)}</td>
+      <td>${r.deployment_status}</td>
+      <td>${r.mttr_minutes}</td>
+      <td>${r.ai_fix_applied}</td>
+      <td>${r.commit_author}</td>
+    </tr>
+  `;
+});
+
+// ===== Chart Data =====
+const labels = data.records.map(r => r.commit_hash.substring(0,6));
+const mttr = data.records.map(r => r.mttr_minutes);
+const aiFixCount = data.records.filter(r => r.ai_fix_applied).length;
+const manualCount = data.records.length - aiFixCount;
+
+// MTTR Chart
+new Chart(document.getElementById("mttrChart"), {
+  type: 'line',
+  data: {
+    labels: labels,
+    datasets: [{
+      label: 'MTTR (minutes)',
+      data: mttr,
+      borderColor: 'cyan',
+      tension: 0.3
+    }]
+  }
+});
+
+// AI Fix Chart
+new Chart(document.getElementById("aiChart"), {
+  type: 'pie',
+  data: {
+    labels: ['AI Fix', 'Manual'],
+    datasets: [{
+      data: [aiFixCount, manualCount],
+      backgroundColor: ['#22c55e', '#ef4444']
+    }]
+  }
+});
+
+// Success Chart
+new Chart(document.getElementById("successChart"), {
+  type: 'doughnut',
+  data: {
+    labels: ['Success', 'Failed'],
+    datasets: [{
+      data: [
+        data.stats.successful_deployments,
+        data.stats.failed_deployments
+      ],
+      backgroundColor: ['#3b82f6', '#f43f5e']
+    }]
+  }
+});
+</script>
+
+</body>
+</html>
